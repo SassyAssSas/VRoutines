@@ -1,0 +1,16 @@
+{
+    "name": "Violoncello.Routines",
+    "rootNamespace": "Violoncello.Routines",
+    "references": [
+        "GUID:63f7009edef67a04ab7b041ecf445938"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
