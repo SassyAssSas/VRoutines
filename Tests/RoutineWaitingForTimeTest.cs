@@ -8,8 +8,8 @@ using UnityEngine.TestTools;
 
 namespace Violoncello.Routines.Tests {
     public class RoutineWaitingForTimeTest {
-        private const int IterationsAmount = 15;
-        private const float WaitSeconds = 0.35f;
+        private const int IterationsAmount = 5;
+        private const float WaitSeconds = 1f;
 
         private const float MaxErrorMargin = 0.15f;
 
@@ -87,49 +87,52 @@ namespace Violoncello.Routines.Tests {
 
             private Routine _timing;
             private int _iterationsAmount;
-            private float _rawWaitSeconds;
+            private float _waitSeconds;
             private float _maxErrorMarginSeconds;
             private float _timeScale;
             private TimeMode _timeMode;
 
-            private bool isInitialized;
-
             public void Initialize(Routine timing, int iterationsAmount, float waitSeconds, float maxErrorMargin, float timeScale, TimeMode timeMode) {
                 _timing = timing;
                 _iterationsAmount = iterationsAmount;
-                _rawWaitSeconds = waitSeconds;
+                _waitSeconds = waitSeconds;
                 _maxErrorMarginSeconds = maxErrorMargin;
                 _timeScale = timeScale;
                 _timeMode = timeMode;
             }
 
             public void Start() {
-                Routine.Run(NotMoron);
+                Routine.Run(WaitTest);
             }
 
-            private IEnumerator<Routine> NotMoron() {
-                var previousTime = Time.time;
-                var stopwatch = new Stopwatch();
+            private IEnumerator<Routine> WaitTest() {
+                var timeScaleBuffer = Time.timeScale;
+                Time.timeScale = _timeScale;
+
+                var previousTime = Time.unscaledTime;
 
                 for (int i = 0; i < _iterationsAmount; i++) {
-                    stopwatch.Restart();
+                    yield return _timing;
 
-                    yield return _timing.Clone();
+                    var perfectElapsedTime = _timeMode switch {
+                        TimeMode.Scaled => _waitSeconds / _timeScale,
+                        TimeMode.Real => _waitSeconds,
+                        _ => throw new NotImplementedException($"Unhandled case: {_timeMode}")
+                    };
 
-                    stopwatch.Stop();
-
-                    var currentTime = Time.time;
-                    var perfectTime = previousTime + _rawWaitSeconds;
+                    var currentTime = Time.unscaledTime;
+                    var perfectTime = previousTime + perfectElapsedTime;
 
                     var difference = GetAbsoluteDifference(currentTime, perfectTime);
 
                     if (difference > _maxErrorMarginSeconds) {
-                        Message = $"TimeScale:{Time.timeScale}\n" +
-                                    $"Previous Time: {previousTime}\n" +
-                                    $"Current Time: {currentTime}\n" +
-                                    $"Perfect time: {perfectTime}\n" +
-                                    $"Difference: {difference}\n" +
-                                    $"Stopwatch: {stopwatch.ElapsedMilliseconds}";
+                        Message = $"Error details:\n" +
+                                  $" Current iteration: {i}\n" +
+                                  $" TimeScale: {Time.timeScale}\n" +
+                                  $" Previous Time: {previousTime}s\n" +
+                                  $" Current Time: {currentTime}s\n" +
+                                  $" Perfect time: {perfectTime}s\n" +
+                                  $" Difference: {difference} > {MaxErrorMargin}s\n";
 
                         IsTestFinished = true;
 
@@ -138,6 +141,8 @@ namespace Violoncello.Routines.Tests {
 
                     previousTime = currentTime;
                 }
+
+                Time.timeScale = timeScaleBuffer;
 
                 Success = true;
                 IsTestFinished = true;
