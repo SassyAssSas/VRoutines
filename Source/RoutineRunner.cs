@@ -157,10 +157,10 @@ namespace Violoncello.Routines {
                     if (currentEnumerator.MoveNext()) {
                         response = currentEnumerator.Current;
 
-                        if (response.HasInnerEnumerator) {
+                        if (response.TryGetInternalRoutine(out IEnumerator<Routine> internalRoutine)) {
                             enumeratorsChain.Push(currentEnumerator);
 
-                            currentEnumerator = response.InnerEnumerator;
+                            currentEnumerator = internalRoutine;
 
                             return TryTick(out response);
                         }
@@ -169,36 +169,6 @@ namespace Violoncello.Routines {
                         enumeratorsChain.TryPop(out currentEnumerator);
 
                         return TryTick(out response);
-                    }
-                }
-
-                response = currentEnumerator.Current;
-
-                return true;
-            }
-
-            [Obsolete]
-            public bool TryStep(out Routine response) {
-                if (currentEnumerator == null) {
-                    _awaiter.Complete();
-
-                    response = default;
-
-                    return false;
-                }
-
-                if (!_pauseToken.Paused) {
-                    if (!currentEnumerator.MoveNext()) {
-                        enumeratorsChain.TryPop(out currentEnumerator);
-
-                        return TryStep(out response);
-                    }
-                    else if (currentEnumerator.Current.HasInnerEnumerator) {
-                        enumeratorsChain.Push(currentEnumerator);
-
-                        currentEnumerator = currentEnumerator.Current.InnerEnumerator;
-
-                        return TryStep(out response);
                     }
                 }
 

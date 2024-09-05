@@ -5,23 +5,25 @@ using UnityEngine;
 
 namespace Violoncello.Routines {
     public readonly struct Routine {
-        internal readonly bool HasInnerEnumerator => InnerEnumerator != null;
-
         internal readonly PlayerLoopTiming Timing { get; }
-        internal readonly IEnumerator<Routine> InnerEnumerator { get; }
 
         private readonly Func<IEnumerator<Routine>> _innerEnumeratorCreator;
+
+        private Routine(PlayerLoopTiming timing) {
+            Timing = timing;
+            _innerEnumeratorCreator = null;
+        }
 
         private Routine(PlayerLoopTiming timing, Func<IEnumerator<Routine>> innerRoutineCreator) {
             Timing = timing;
             _innerEnumeratorCreator = innerRoutineCreator;
-
-            InnerEnumerator = innerRoutineCreator.Invoke();
         }
 
-        public Routine Clone() {
-            return new Routine(Timing, _innerEnumeratorCreator);
-        }
+        internal bool TryGetInternalRoutine(out IEnumerator<Routine> routine) {
+            routine = _innerEnumeratorCreator?.Invoke();
+
+            return routine != null;
+        } 
 
         public static RoutineAwaiter Run(IEnumerator<Routine> routine, CancellationToken cancellationToken = default, PauseToken pauseToken = default) {
             return RoutineRunner.Run(routine, pauseToken);
@@ -29,14 +31,16 @@ namespace Violoncello.Routines {
 
         public static RoutineAwaiter Run(Func<IEnumerator<Routine>> routineCallback) => Run(routineCallback.Invoke());
 
-        public static Routine NextFrame() => Yield(PlayerLoopTiming.Update);
+        public static Routine NextFrame() => WaitForPlayerLoopTiming(PlayerLoopTiming.Update);
 
-        public static Routine WaitForFixedUpdate() => Yield(PlayerLoopTiming.FixedUpdate);
+        public static Routine WaitForUpdate() => WaitForPlayerLoopTiming(PlayerLoopTiming.Update);
 
-        public static Routine WaitForLateUpdate() => Yield(PlayerLoopTiming.PreLateUpdate);
+        public static Routine WaitForFixedUpdate() => WaitForPlayerLoopTiming(PlayerLoopTiming.FixedUpdate);
 
-        public static Routine Yield(PlayerLoopTiming timing) {
-            return new Routine(timing, () => null);
+        public static Routine WaitForLateUpdate() => WaitForPlayerLoopTiming(PlayerLoopTiming.PreLateUpdate);
+
+        public static Routine WaitForPlayerLoopTiming(PlayerLoopTiming timing) {
+            return new Routine(timing);
         }
 
         public static Routine WaitForSeconds(float value, CancellationToken cancellationToken = default) {
@@ -163,13 +167,13 @@ namespace Violoncello.Routines {
 
         private static IEnumerator<Routine> WaitUntilRoutine(Func<bool> predicate, CancellationToken cancellationToken = default) {
             while (!cancellationToken.IsCancellationRequested && !predicate.Invoke()) {
-                yield return Yield(PlayerLoopTiming.PreUpdate);
+                yield return WaitForPlayerLoopTiming(PlayerLoopTiming.PreUpdate);
             }
         }
 
         private static IEnumerator<Routine> WaitWhileRoutine(Func<bool> predicate, CancellationToken cancellationToken = default) {
             while (!cancellationToken.IsCancellationRequested && predicate.Invoke()) {
-                yield return Yield(PlayerLoopTiming.PreUpdate);
+                yield return WaitForPlayerLoopTiming(PlayerLoopTiming.PreUpdate);
             }
         }
     }
