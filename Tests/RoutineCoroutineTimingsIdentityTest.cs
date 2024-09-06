@@ -6,7 +6,6 @@ using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using System.Timers;
 
 namespace Violoncello.Routines.Tests {
     public class RoutineCoroutineTimingsIdentityTest {

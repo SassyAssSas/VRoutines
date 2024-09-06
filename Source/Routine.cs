@@ -32,7 +32,7 @@ namespace Violoncello.Routines {
         public static RoutineAwaiter Run(Func<IEnumerator<Routine>> routineCallback) => Run(routineCallback.Invoke());
 
         public static Routine SubRoutine(IEnumerator<Routine> routine) {
-            return new Routine(PlayerLoopTiming.Update, routine);
+            return new Routine(PlayerLoopTiming.Initialization, routine);
         }
     }
 }

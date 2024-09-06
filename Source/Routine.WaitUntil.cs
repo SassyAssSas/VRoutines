@@ -4,7 +4,6 @@ using System.Threading;
 
 namespace Violoncello.Routines {
     public readonly partial struct Routine {
-
         public static Routine WaitUntil(Func<bool> predicate, CancellationToken cancellationToken = default) {
             return new Routine(PlayerLoopTiming.PreUpdate, WaitUntilRoutine(predicate, cancellationToken));
         }
