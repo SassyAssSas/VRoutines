@@ -36,7 +36,7 @@ namespace Violoncello.Routines.Tests {
         public IEnumerator UpdateTimingWithPrefixYieldInstruction() {
             var resultBuffer = new HeapContainer<bool>();
 
-            var routineTiming = Routine.NextFrame();
+            var routineTiming = Routine.WaitForUpdate();
 
             yield return RunTimingTest(null, routineTiming, UpdateTestIterations, MonoTimingIdentityTest.YieldInstructionPlacement.Prefix, resultBuffer);
 
@@ -47,7 +47,7 @@ namespace Violoncello.Routines.Tests {
         public IEnumerator UpdateTimingWithSuffixYieldInstruction() {
             var resultBuffer = new HeapContainer<bool>();
 
-            var routineTiming = Routine.NextFrame();
+            var routineTiming = Routine.WaitForUpdate();
 
             yield return RunTimingTest(null, routineTiming, UpdateTestIterations, MonoTimingIdentityTest.YieldInstructionPlacement.Suffix, resultBuffer);
 
