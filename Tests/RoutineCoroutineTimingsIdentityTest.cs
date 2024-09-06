@@ -18,7 +18,7 @@ namespace Violoncello.Routines.Tests {
         public IEnumerator DefaultTimingWithPrefixYieldInstruction() {
             var resultBuffer = new HeapContainer<bool>();
 
-            yield return RunTimingTest(null, default, DefaultTimingTestIterations, MonoTimingIdentityTest.YieldInstructionPlacement.Prefix, resultBuffer);
+            yield return RunTimingTest(null, () => default, DefaultTimingTestIterations, MonoTimingIdentityTest.YieldInstructionPlacement.Prefix, resultBuffer);
 
             Assert.IsTrue(resultBuffer, GetErrorMessageFor("Default"));
         }
@@ -27,7 +27,7 @@ namespace Violoncello.Routines.Tests {
         public IEnumerator DefaultTimingWithSuffixYieldInstruction() {
             var resultBuffer = new HeapContainer<bool>();
 
-            yield return RunTimingTest(null, default, DefaultTimingTestIterations, MonoTimingIdentityTest.YieldInstructionPlacement.Suffix, resultBuffer);
+            yield return RunTimingTest(null, () => default, DefaultTimingTestIterations, MonoTimingIdentityTest.YieldInstructionPlacement.Suffix, resultBuffer);
 
             Assert.IsTrue(resultBuffer, GetErrorMessageFor("Default"));
         }
@@ -36,7 +36,7 @@ namespace Violoncello.Routines.Tests {
         public IEnumerator UpdateTimingWithPrefixYieldInstruction() {
             var resultBuffer = new HeapContainer<bool>();
 
-            var routineTiming = Routine.WaitForUpdate();
+            var routineTiming = new Func<Routine>(Routine.WaitForUpdate);
 
             yield return RunTimingTest(null, routineTiming, UpdateTestIterations, MonoTimingIdentityTest.YieldInstructionPlacement.Prefix, resultBuffer);
 
@@ -46,8 +46,7 @@ namespace Violoncello.Routines.Tests {
         [UnityTest]
         public IEnumerator UpdateTimingWithSuffixYieldInstruction() {
             var resultBuffer = new HeapContainer<bool>();
-
-            var routineTiming = Routine.WaitForUpdate();
+            var routineTiming = new Func<Routine>(Routine.WaitForUpdate);
 
             yield return RunTimingTest(null, routineTiming, UpdateTestIterations, MonoTimingIdentityTest.YieldInstructionPlacement.Suffix, resultBuffer);
 
@@ -59,7 +58,7 @@ namespace Violoncello.Routines.Tests {
             var resultBuffer = new HeapContainer<bool>();
 
             var coroutineTiming = new WaitForFixedUpdate();
-            var routineTiming = Routine.WaitForFixedUpdate();
+            var routineTiming = new Func<Routine>(Routine.WaitForFixedUpdate);
 
             yield return RunTimingTest(coroutineTiming, routineTiming, FixedUpdateTestIterations, MonoTimingIdentityTest.YieldInstructionPlacement.Prefix, resultBuffer);
 
@@ -71,7 +70,7 @@ namespace Violoncello.Routines.Tests {
             var resultBuffer = new HeapContainer<bool>();
 
             var coroutineTiming = new WaitForFixedUpdate();
-            var routineTiming = Routine.WaitForFixedUpdate();
+            var routineTiming = new Func<Routine>(Routine.WaitForFixedUpdate);
 
             yield return RunTimingTest(coroutineTiming, routineTiming, FixedUpdateTestIterations, MonoTimingIdentityTest.YieldInstructionPlacement.Suffix, resultBuffer);
 
@@ -82,10 +81,10 @@ namespace Violoncello.Routines.Tests {
             return $"Routine's {timingName} timing doesn't act the same as Coroutine's analog.";
         }
 
-        private IEnumerator RunTimingTest(YieldInstruction coroutineTiming, Routine routineTiming, int iterations, MonoTimingIdentityTest.YieldInstructionPlacement yieldInstructionPlacement, HeapContainer<bool> resultBuffer) {
+        private IEnumerator RunTimingTest(YieldInstruction coroutineTiming, Func<Routine> routineTimingCreator, int iterations, MonoTimingIdentityTest.YieldInstructionPlacement yieldInstructionPlacement, HeapContainer<bool> resultBuffer) {
             var monoTest = new MonoBehaviourTest<MonoTimingIdentityTest>();
 
-            monoTest.component.Initialize(coroutineTiming, routineTiming, iterations, yieldInstructionPlacement);
+            monoTest.component.Initialize(coroutineTiming, routineTimingCreator, iterations, yieldInstructionPlacement);
 
             yield return monoTest;
 
@@ -97,15 +96,15 @@ namespace Violoncello.Routines.Tests {
             public bool IsTestFinished { get; private set; }
 
             private YieldInstruction _coroutineTiming;
-            private Routine _routineTiming;
+            private Func<Routine> _routineTimingCreator;
 
             private int _iterationsAmount = 30;
 
             private YieldInstructionPlacement _selectedTests;
 
-            public void Initialize(YieldInstruction coroutineTiming, Routine routineTiming, int iterationsAmount, YieldInstructionPlacement selectedTests) {
+            public void Initialize(YieldInstruction coroutineTiming, Func<Routine> routineTimingCreator, int iterationsAmount, YieldInstructionPlacement selectedTests) {
                 _coroutineTiming = coroutineTiming;
-                _routineTiming = routineTiming;
+                _routineTimingCreator = routineTimingCreator;
                 _selectedTests = selectedTests;
                 _iterationsAmount = iterationsAmount;
             }
@@ -132,7 +131,7 @@ namespace Violoncello.Routines.Tests {
                 IsTestFinished = true;
             }
 
-            private IEnumerator CompareRoutinesBehaviour(Func<YieldInstruction, float[], HeapContainer<bool>, IEnumerator> coroutine, Func<Routine, float[], HeapContainer<bool>, IEnumerator<Routine>> routine, HeapContainer<bool> resultBuffer) {
+            private IEnumerator CompareRoutinesBehaviour(Func<YieldInstruction, float[], HeapContainer<bool>, IEnumerator> coroutine, Func<Func<Routine>, float[], HeapContainer<bool>, IEnumerator<Routine>> routine, HeapContainer<bool> resultBuffer) {
                 var coroutineComplete = new HeapContainer<bool>();
                 var routineComplete = new HeapContainer<bool>();
 
@@ -140,7 +139,7 @@ namespace Violoncello.Routines.Tests {
                 float[] routineTimestampsBuffer = new float[_iterationsAmount];
 
                 StartCoroutine(coroutine.Invoke(_coroutineTiming, coroutineTimestampsBuffer, coroutineComplete));
-                Routine.Run(routine.Invoke(_routineTiming, routineTimestampsBuffer, routineComplete));
+                Routine.Run(routine.Invoke(_routineTimingCreator, routineTimestampsBuffer, routineComplete));
 
                 yield return new WaitUntil(() => coroutineComplete && routineComplete);
 
@@ -169,11 +168,11 @@ namespace Violoncello.Routines.Tests {
                 isComplete.Value = true;
             }
 
-            private IEnumerator<Routine> TestRoutineAppendYield(Routine timing, float[] buffer, HeapContainer<bool> isComplete) {
+            private IEnumerator<Routine> TestRoutineAppendYield(Func<Routine> timing, float[] buffer, HeapContainer<bool> isComplete) {
                 for (int i = 0; i < buffer.Length; i++) {
                     buffer[i] = Time.time;
 
-                    yield return timing;
+                    yield return timing.Invoke();
                 }
 
                 isComplete.Value = true;
@@ -189,9 +188,9 @@ namespace Violoncello.Routines.Tests {
                 isComplete.Value = true;
             }
 
-            private IEnumerator<Routine> TestRoutinePrependYield(Routine timing, float[] buffer, HeapContainer<bool> isComplete) {
+            private IEnumerator<Routine> TestRoutinePrependYield(Func<Routine> timing, float[] buffer, HeapContainer<bool> isComplete) {
                 for (int i = 0; i < buffer.Length; i++) {
-                    yield return timing;
+                    yield return timing.Invoke();
 
                     buffer[i] = Time.time;
                 }

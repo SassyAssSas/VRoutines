@@ -7,20 +7,20 @@ namespace Violoncello.Routines {
     public readonly partial struct Routine {
         internal readonly PlayerLoopTiming Timing { get; }
 
-        private readonly Func<IEnumerator<Routine>> _innerEnumeratorCreator;
+        private readonly IEnumerator<Routine> _innerEnumerator;
 
         private Routine(PlayerLoopTiming timing) {
             Timing = timing;
-            _innerEnumeratorCreator = null;
+            _innerEnumerator = null;
         }
 
-        private Routine(PlayerLoopTiming timing, Func<IEnumerator<Routine>> innerRoutineCreator) {
+        private Routine(PlayerLoopTiming timing, IEnumerator<Routine> innerRoutine) {
             Timing = timing;
-            _innerEnumeratorCreator = innerRoutineCreator;
+            _innerEnumerator = innerRoutine;
         }
 
         internal bool TryGetInternalRoutine(out IEnumerator<Routine> routine) {
-            routine = _innerEnumeratorCreator?.Invoke();
+            routine = _innerEnumerator;
 
             return routine != null;
         } 
@@ -32,7 +32,7 @@ namespace Violoncello.Routines {
         public static RoutineAwaiter Run(Func<IEnumerator<Routine>> routineCallback) => Run(routineCallback.Invoke());
 
         public static Routine SubRoutine(IEnumerator<Routine> routine) {
-            return new Routine(PlayerLoopTiming.Update, () => routine);
+            return new Routine(PlayerLoopTiming.Update, routine);
         }
     }
 }

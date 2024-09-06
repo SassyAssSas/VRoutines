@@ -5,7 +5,7 @@ using System.Threading;
 namespace Violoncello.Routines {
     public readonly partial struct Routine {
         public static Routine WaitWhile(Func<bool> predicate, CancellationToken cancellationToken = default) {
-            return new Routine(PlayerLoopTiming.PreUpdate, () => WaitWhileRoutine(predicate, cancellationToken));
+            return new Routine(PlayerLoopTiming.PreUpdate, WaitWhileRoutine(predicate, cancellationToken));
         }
 
         private static IEnumerator<Routine> WaitWhileRoutine(Func<bool> predicate, CancellationToken cancellationToken = default) {

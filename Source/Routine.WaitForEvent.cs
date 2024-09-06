@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace Violoncello.Routines {
     public readonly partial struct Routine {
         public static Routine WaitForEvent(Action<Action> subscribe, Action<Action> unsubscribe, CancellationToken cancellationToken = default) {
-            return new Routine(PlayerLoopTiming.PreUpdate, () => WaitForEventRoutine(subscribe, unsubscribe, cancellationToken));
+            return new Routine(PlayerLoopTiming.PreUpdate, WaitForEventRoutine(subscribe, unsubscribe, cancellationToken));
         }
 
         private static IEnumerator<Routine> WaitForEventRoutine(Action<Action> subscribe, Action<Action> unsubscribe, CancellationToken cancellationToken = default) {
@@ -21,7 +21,7 @@ namespace Violoncello.Routines {
         }
 
         public static Routine WaitForEvent<T>(Action<Action<T>> subscribe, Action<Action<T>> unsubscribe, CancellationToken cancellationToken = default) {
-            return new Routine(PlayerLoopTiming.PreUpdate, () => WaitForEventRoutine(subscribe, unsubscribe, cancellationToken));
+            return new Routine(PlayerLoopTiming.PreUpdate, WaitForEventRoutine(subscribe, unsubscribe, cancellationToken));
         }
 
         private static IEnumerator<Routine> WaitForEventRoutine<T>(Action<Action<T>> subscribe, Action<Action<T>> unsubscribe, CancellationToken cancellationToken = default) {
@@ -37,7 +37,7 @@ namespace Violoncello.Routines {
         }
 
         public static Routine WaitForEvent<T, T2>(Action<Action<T, T2>> subscribe, Action<Action<T, T2>> unsubscribe, CancellationToken cancellationToken = default) {
-            return new Routine(PlayerLoopTiming.PreUpdate, () => WaitForEventRoutine(subscribe, unsubscribe, cancellationToken));
+            return new Routine(PlayerLoopTiming.PreUpdate, WaitForEventRoutine(subscribe, unsubscribe, cancellationToken));
         }
 
         private static IEnumerator<Routine> WaitForEventRoutine<T, T2>(Action<Action<T, T2>> subscribe, Action<Action<T, T2>> unsubscribe, CancellationToken cancellationToken = default) {

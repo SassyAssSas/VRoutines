@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Violoncello.Routines {
     public readonly partial struct Routine {
         public static Routine WaitForSecondsNoPause(float value, CancellationToken cancellationToken = default) {
-            return new Routine(PlayerLoopTiming.FixedUpdate, () => WaitForSecondsNoPauseRoutine(value, cancellationToken));
+            return new Routine(PlayerLoopTiming.FixedUpdate, WaitForSecondsNoPauseRoutine(value, cancellationToken));
         }
 
         private static IEnumerator<Routine> WaitForSecondsNoPauseRoutine(float value, CancellationToken cancellationToken = default) {

@@ -22,9 +22,7 @@ namespace Violoncello.Routines.Tests {
             var resultBuffer = new HeapContainer<bool>();
             var errorMessageBuffer = new HeapContainer<string>();
 
-            var timing = Routine.WaitForSeconds(WaitSeconds);
-
-            yield return RunWaitingAccuracyTest(timing, DefaultTimeScale, TimeMode.Scaled, resultBuffer, errorMessageBuffer);
+            yield return RunWaitingAccuracyTest(() => Routine.WaitForSeconds(WaitSeconds), DefaultTimeScale, TimeMode.Scaled, resultBuffer, errorMessageBuffer);
 
             Assert.IsTrue(resultBuffer, errorMessageBuffer);
         }
@@ -34,7 +32,7 @@ namespace Violoncello.Routines.Tests {
             var resultBuffer = new HeapContainer<bool>();
             var errorMessageBuffer = new HeapContainer<string>();
 
-            yield return RunWaitingAccuracyTest(Routine.WaitForSeconds(WaitSeconds), HalfTimeScale, TimeMode.Scaled, resultBuffer, errorMessageBuffer);
+            yield return RunWaitingAccuracyTest(() => Routine.WaitForSeconds(WaitSeconds), HalfTimeScale, TimeMode.Scaled, resultBuffer, errorMessageBuffer);
 
             Assert.IsTrue(resultBuffer, errorMessageBuffer);
         }
@@ -44,7 +42,7 @@ namespace Violoncello.Routines.Tests {
             var resultBuffer = new HeapContainer<bool>();
             var errorMessageBuffer = new HeapContainer<string>();
 
-            yield return RunWaitingAccuracyTest(Routine.WaitForSeconds(WaitSeconds), TwiceTimeScale, TimeMode.Scaled, resultBuffer, errorMessageBuffer);
+            yield return RunWaitingAccuracyTest(() => Routine.WaitForSeconds(WaitSeconds), TwiceTimeScale, TimeMode.Scaled, resultBuffer, errorMessageBuffer);
 
             Assert.IsTrue(resultBuffer, errorMessageBuffer);
         }
@@ -54,7 +52,7 @@ namespace Violoncello.Routines.Tests {
             var resultBuffer = new HeapContainer<bool>();
             var errorMessageBuffer = new HeapContainer<string>();
 
-            yield return RunWaitingAccuracyTest(Routine.WaitForSecondsRealtime(WaitSeconds), DefaultTimeScale, TimeMode.Real, resultBuffer, errorMessageBuffer);
+            yield return RunWaitingAccuracyTest(() => Routine.WaitForSecondsRealtime(WaitSeconds), DefaultTimeScale, TimeMode.Real, resultBuffer, errorMessageBuffer);
 
             Assert.IsTrue(resultBuffer, errorMessageBuffer);
         }
@@ -64,12 +62,12 @@ namespace Violoncello.Routines.Tests {
             var resultBuffer = new HeapContainer<bool>();
             var errorMessageBuffer = new HeapContainer<string>();
 
-            yield return RunWaitingAccuracyTest(Routine.WaitForSecondsRealtime(WaitSeconds), HalfTimeScale, TimeMode.Real, resultBuffer, errorMessageBuffer);
+            yield return RunWaitingAccuracyTest(() => Routine.WaitForSecondsRealtime(WaitSeconds), HalfTimeScale, TimeMode.Real, resultBuffer, errorMessageBuffer);
 
             Assert.IsTrue(resultBuffer, errorMessageBuffer);
         }
 
-        private IEnumerator RunWaitingAccuracyTest(Routine timing, float timeScale, TimeMode timeMode, HeapContainer<bool> resultBuffer, HeapContainer<string> messageBuffer) {
+        private IEnumerator RunWaitingAccuracyTest(Func<Routine> timing, float timeScale, TimeMode timeMode, HeapContainer<bool> resultBuffer, HeapContainer<string> messageBuffer) {
             var monoTest = new MonoBehaviourTest<MonoWaitingAccuracyTest>();
 
             monoTest.component.Initialize(timing, IterationsAmount, WaitSeconds, MaxErrorMargin, timeScale, timeMode);
@@ -85,15 +83,15 @@ namespace Violoncello.Routines.Tests {
             public bool Success { get; set; }
             public string Message { get; private set; }
 
-            private Routine _timing;
+            private Func<Routine> _timingCreator;
             private int _iterationsAmount;
             private float _waitSeconds;
             private float _maxErrorMarginSeconds;
             private float _timeScale;
             private TimeMode _timeMode;
 
-            public void Initialize(Routine timing, int iterationsAmount, float waitSeconds, float maxErrorMargin, float timeScale, TimeMode timeMode) {
-                _timing = timing;
+            public void Initialize(Func<Routine> timing, int iterationsAmount, float waitSeconds, float maxErrorMargin, float timeScale, TimeMode timeMode) {
+                _timingCreator = timing;
                 _iterationsAmount = iterationsAmount;
                 _waitSeconds = waitSeconds;
                 _maxErrorMarginSeconds = maxErrorMargin;
@@ -112,7 +110,7 @@ namespace Violoncello.Routines.Tests {
                 var previousTime = Time.unscaledTime;
 
                 for (int i = 0; i < _iterationsAmount; i++) {
-                    yield return _timing;
+                    yield return _timingCreator.Invoke();
 
                     var perfectElapsedTime = _timeMode switch {
                         TimeMode.Scaled => _waitSeconds / _timeScale,
